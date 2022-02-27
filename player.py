@@ -72,7 +72,7 @@ class AiPlayer(Player):
    @pyqtSlot(str)
    def TakeTurn(self, fen):
       """
-         BRIEF   Evaluation FEN position with chess engine
+         BRIEF   Open a process to get the next move from the AI
                  Emit DecidedMove(uci) and return uci
       """
       self.last_fen = fen
