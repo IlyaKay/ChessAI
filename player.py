@@ -1,7 +1,6 @@
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtWidgets import QWidget, QCheckBox, QDoubleSpinBox, QVBoxLayout
-# from subprocess import Popen, PIPE, DEVNULL
 import chess.engine
 
 
@@ -35,7 +34,7 @@ class Player(QObject):
 
    def IsMyMove(self, fen):
       """
-         BRUEF  Check the fen to see if it's my turn
+         BREIF  Check the fen to see if it's my turn
       """
       return " {0} ".format(self.color) in fen
 
@@ -74,6 +73,7 @@ class AiPlayer(Player):
       """
          BRIEF   Open a process to get the next move from the AI
                  Emit DecidedMove(uci) and return uci
+                 Stash Test
       """
       self.last_fen = fen
       if self.IsMyMove(fen):

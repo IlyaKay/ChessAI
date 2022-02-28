@@ -8,7 +8,7 @@ import os
 
 
 class Options:
-   DEFAULT_TURN_LIMIT_S = 8
+   DEFAULT_TURN_LIMIT_S = 2
    DEFAULT_AI_EXE_PATH = 'stockfish_14.1_win_x64_avx2.exe'
    
 class Window(QWidget):

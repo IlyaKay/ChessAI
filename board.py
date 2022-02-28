@@ -137,7 +137,7 @@ class PromotionDialog(QDialog):
    
    def __init__(self, parent = None):
       """
-         BRIF  Initialize the dialog with buttons
+         BRIEF  Initialize the dialog with buttons
       """
       super().__init__(parent, Qt.WindowSystemMenuHint | Qt.WindowTitleHint)
       self.setWindowTitle("Promotion")
