@@ -8,8 +8,8 @@ import os
 
 
 class Options:
-   DEFAULT_TURN_LIMIT_S = 2
-   DEFAULT_AI_EXE_PATH = 'stockfish_14.1_win_x64_avx2.exe'
+   DEFAULT_TURN_LIMIT_S = 1
+   DEFAULT_AI_EXE_PATH = 'Contemptitan_sf12.exe'
    
 class Window(QWidget):
    """

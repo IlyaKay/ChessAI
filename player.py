@@ -80,7 +80,18 @@ class AiPlayer(Player):
          with chess.engine.SimpleEngine.popen_uci(
                  self.exe_path) as sf:
             board = chess.Board(fen)
-            result = sf.play(board, chess.engine.Limit(time=self.turn_limit_s))
+            # result = sf.play(board, chess.engine.Limit(time=self.turn_limit_s))
+            result = sf.play(board, chess.engine.Limit(time=self.turn_limit_s),
+                             options={'Analysis Contempt': 'Both', 'Contempt': "100"})
+            eval = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
+                              options={'Analysis Contempt': 'Both', 'Contempt': "100"})
+            print("Eval:", eval["score"], "\nMove: ",result.move)
+            result2 = sf.play(board, chess.engine.Limit(time=self.turn_limit_s),
+                             options={'Analysis Contempt': 'Both', 'Contempt': "0"})
+            eval2 = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
+                              options={'Analysis Contempt': 'Both', 'Contempt': "0"})
+            print("Eval2:", eval2["score"], "\nMove2: ",result2.move)
+            if(result.move != result2.move): print("\n\n\n\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             uci = str(result.move)
             self.DecidedMove.emit(uci)
             return uci
