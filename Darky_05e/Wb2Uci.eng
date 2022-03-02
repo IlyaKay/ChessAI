@@ -1,0 +1,7 @@
+[ENGINE]
+Name=Darky 0.5e
+Author=Alex Guerrero
+Filename=Darky_05e_UCI.exe
+
+[OPTIONS]
+Program=Darky_05e.exe
