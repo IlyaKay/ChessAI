@@ -8,8 +8,9 @@ import os
 
 
 class Options:
-   DEFAULT_TURN_LIMIT_S = 1
-   DEFAULT_AI_EXE_PATH = 'Contemptitan_sf12.exe'
+   DEFAULT_TURN_LIMIT_S = 6
+   # DEFAULT_AI_EXE_PATH = 'Contemptitan_sf12.exe'
+   DEFAULT_AI_EXE_PATH = 'Darky_05e_UCI.exe'
    
 class Window(QWidget):
    """
@@ -59,7 +60,11 @@ if __name__ == '__main__':
    from PyQt5.QtCore import QThread
    from PyQt5.QtWidgets import QApplication
    from argparse import ArgumentParser
-   
+
+   import logging
+   logging.basicConfig(level=logging.DEBUG)
+
+   os.chdir(r"C:\Users\Ilya\PycharmProjects\ChessAI\Darky_05e")
    parser = ArgumentParser()
    parser.add_argument('ai_exe_path', nargs='?', type=str, default=Options.DEFAULT_AI_EXE_PATH,
                                       help='An AI exe which accepts 2 args <fen> <time limit (s)>. It should output a turn in uci format within the time limit.')
@@ -72,7 +77,7 @@ if __name__ == '__main__':
       warning.setWindowTitle("Warning")
       warning.setText("AI exe path '{0}' not found. Associated controls will be disabled.\nRun main.py --help for details.".format(args.ai_exe_path))
       warning.exec()
-      
+
    thread = QThread()
    wnd = Window(args.ai_exe_path, Options.DEFAULT_TURN_LIMIT_S, thread)
    

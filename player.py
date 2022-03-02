@@ -58,6 +58,7 @@ class AiPlayer(Player):
 
       # set member vars
       self.exe_path = exe_path
+      self.sf = chess.engine.SimpleEngine.popen_uci(self.exe_path)
       self.turn_limit_s = turn_limit_s
       self.enabled = board is None # enabled by default if no board
       self.last_fen = board.fen() if board else None
@@ -77,24 +78,21 @@ class AiPlayer(Player):
       """
       self.last_fen = fen
       if self.IsMyMove(fen):
-         with chess.engine.SimpleEngine.popen_uci(
-                 self.exe_path) as sf:
-            board = chess.Board(fen)
-            # result = sf.play(board, chess.engine.Limit(time=self.turn_limit_s))
-            result = sf.play(board, chess.engine.Limit(time=self.turn_limit_s),
-                             options={'Analysis Contempt': 'Both', 'Contempt': "100"})
-            eval = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
-                              options={'Analysis Contempt': 'Both', 'Contempt': "100"})
-            print("Eval:", eval["score"], "\nMove: ",result.move)
-            result2 = sf.play(board, chess.engine.Limit(time=self.turn_limit_s),
-                             options={'Analysis Contempt': 'Both', 'Contempt': "0"})
-            eval2 = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
-                              options={'Analysis Contempt': 'Both', 'Contempt': "0"})
-            print("Eval2:", eval2["score"], "\nMove2: ",result2.move)
-            if(result.move != result2.move): print("\n\n\n\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-            uci = str(result.move)
-            self.DecidedMove.emit(uci)
-            return uci
+         board = chess.Board(fen)
+         result = self.sf.play(board, chess.engine.Limit(depth=self.turn_limit_s))
+         # result = sf.play(board, chess.engine.Limit(time=self.turn_limit_s))
+         # eval = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
+         #                   options={'Analysis Contempt': 'Both', 'Contempt': "100"})
+         # print("Eval:", eval["score"], "\nMove: ",result.move)
+         # result2 = sf.play(board, chess.engine.Limit(time=self.turn_limit_s),
+         #                  options={'Analysis Contempt': 'Both', 'Contempt': "0"})
+         # eval2 = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
+         #                   options={'Analysis Contempt': 'Both', 'Contempt': "0"})
+         # print("Eval2:", eval2["score"], "\nMove2: ",result2.move)
+         # if(result.move != result2.move): print("\n\n\n\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+         uci = str(result.move)
+         self.DecidedMove.emit(uci)
+         return uci
 
    @pyqtSlot(float)
    def SetTurnLimit(self, turn_limit_s):
