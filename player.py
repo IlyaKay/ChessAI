@@ -1,244 +1,231 @@
-
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtWidgets import QWidget, QCheckBox, QDoubleSpinBox, QVBoxLayout
 import chess.engine
 
 
+'''
+An object of this class represents a player in a chess game
+Required signals, slots, etc are defined and stored here
+'''
 class Player(QObject):
-   """
-      BRIEF  This object represents a player in a chess game
-             Define the required signals, slots, etc here
-   """
-   WHITE = 'w'
-   BLACK = 'b'
 
-   DecidedMove = pyqtSignal(str)
+    WHITE = 'w'
+    BLACK = 'b'
 
-   def __init__(self, color, thread = None, board = None):
-      """
-         BRIEF  Cache the player's color
-      """
-      super().__init__()
+    DecidedMove = pyqtSignal(str)
 
-      # set member vars
-      self.color = color
+    def __init__(self, colour, thread=None, board=None):
 
-      # maybe move to thread
-      if thread:
-         self.moveToThread(thread)
+        super().__init__()
 
-      # connect signals/slots
-      if board:
-         self.DecidedMove.connect(board.ApplyMove)
-         board.ReadyForNextMove.connect(self.TakeTurn)
+        # set member vars
+        self.colour = colour
 
-   def IsMyMove(self, fen):
-      """
-         BREIF  Check the fen to see if it's my turn
-      """
-      return " {0} ".format(self.color) in fen
+        # maybe move to thread
+        if thread:
+            self.moveToThread(thread)
 
-   @pyqtSlot(str)
-   def TakeTurn(self, fen):
-      """
-         BRIEF  If self.IsMyMove, emit DecidedMove(uci) and return uci
-      """
+        # connect signals/slots
+        if board:
+            self.DecidedMove.connect(board.ApplyMove)
+            board.ReadyForNextMove.connect(self.TakeTurn)
+
+    '''
+    Check the fen to see if it's my turn
+    '''
+    def IsMyMove(self, fen):
+        return " {0} ".format(self.colour) in fen
+
+    @pyqtSlot(str)
+    def TakeTurn(self, fen):
+        return
+        # If self.IsMyMove, emit DecidedMove(uci) and return uci
 
 
+'''
+Class containing the engine
+'''
 class AiPlayer(Player):
-   """
-      BRIEF  A wrapper for an AI executable
-   """
 
-   def __init__(self, exe_path, turn_limit_s, color, thread = None, board = None):
-      """
-         BRIEF  Start with the path to the exe and seconds limit per turn
-      """
-      super().__init__(color, thread, board)
+    '''
+    Initialise with the path to the exe and seconds limit per turn
+    '''
+    def __init__(self, exe_path, turn_limit_s, colour, thread=None, board=None):
 
-      # set member vars
-      self.exe_path = exe_path
-      self.sf = chess.engine.SimpleEngine.popen_uci(self.exe_path)
-      self.turn_limit_s = turn_limit_s
-      self.enabled = board is None # enabled by default if no board
-      self.last_fen = board.fen() if board else None
+        super().__init__(colour, thread, board)
 
-   def IsMyMove(self, fen):
-      """
-         BRIEF  This is how we are disabling AIs
-      """
-      return super().IsMyMove(fen) and self.enabled
+        # set member vars
+        self.exe_path = exe_path
+        self.engine = chess.engine.SimpleEngine.popen_uci(self.exe_path)
+        self.turn_limit_s = turn_limit_s
+        self.enabled = board is None  # enabled by default if no board
+        self.last_fen = board.fen() if board else None
 
-   @pyqtSlot(str)
-   def TakeTurn(self, fen):
-      """
-         BRIEF   Open a process to get the next move from the AI
-                 Emit DecidedMove(uci) and return uci
-                 Stash Test
-      """
-      self.last_fen = fen
-      if self.IsMyMove(fen):
-         board = chess.Board(fen)
-         result = self.sf.play(board, chess.engine.Limit(depth=self.turn_limit_s))
-         # result = sf.play(board, chess.engine.Limit(time=self.turn_limit_s))
-         # eval = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
-         #                   options={'Analysis Contempt': 'Both', 'Contempt': "100"})
-         # print("Eval:", eval["score"], "\nMove: ",result.move)
-         # result2 = sf.play(board, chess.engine.Limit(time=self.turn_limit_s),
-         #                  options={'Analysis Contempt': 'Both', 'Contempt': "0"})
-         # eval2 = sf.analyse(board, chess.engine.Limit(depth=self.turn_limit_s),
-         #                   options={'Analysis Contempt': 'Both', 'Contempt': "0"})
-         # print("Eval2:", eval2["score"], "\nMove2: ",result2.move)
-         # if(result.move != result2.move): print("\n\n\n\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-         uci = str(result.move)
-         self.DecidedMove.emit(uci)
-         return uci
+    '''
+    Check to temporarily disable the engine if not playing
+    '''
+    def IsMyMove(self, fen):
+        return super().IsMyMove(fen) and self.enabled
 
-   @pyqtSlot(float)
-   def SetTurnLimit(self, turn_limit_s):
-      """
-         BRIEF  Set the turn limit for the player
-      """
-      self.turn_limit_s = turn_limit_s
+    '''
+    Open a process to get the next move from the engine
+    Emit DecidedMove(uci) and return uci
+    '''
+    @pyqtSlot(str)
+    def TakeTurn(self, fen):
+        self.last_fen = fen
+        if self.IsMyMove(fen):
+            board = chess.Board(fen)
+            result = self.engine.play(board, chess.engine.Limit(time=self.turn_limit_s),
+                                      options={'Analysis Contempt': 'Both', 'Contempt': "100"})
+            uci = str(result.move)
+            self.DecidedMove.emit(uci)
+            return uci
 
-   @pyqtSlot(int)
-   def SetCheckSate(self, check_state):
-      """
-         BRIEF  Overload SetEnabled for QCheckBox
-      """
-      self.SetEnabled(check_state == Qt.Checked)
+    '''
+    Set the turn limit for the player
+    '''
+    @pyqtSlot(float)
+    def SetTurnLimit(self, turn_limit_s):
+        self.turn_limit_s = turn_limit_s
 
-   @pyqtSlot(bool)
-   def SetEnabled(self, enabled):
-      """
-         BRIEF  Set the enabled state
-      """
-      self.enabled = enabled
-      self.TakeTurn(self.last_fen)
+    '''
+    Overload SetEnabled for QCheckBox
+    '''
+    @pyqtSlot(int)
+    def SetCheckSate(self, check_state):
+        self.SetEnabled(check_state == Qt.Checked)
 
+    '''
+    Set the enabled state
+    '''
+    @pyqtSlot(bool)
+    def SetEnabled(self, enabled):
+        self.enabled = enabled
+        self.TakeTurn(self.last_fen)
 
+'''
+Display player options on GUI
+'''
 class PlayerOptions(QWidget):
-   """
-      BRIEF  Stack the player options vertically in a UI
-   """
 
-   def __init__(self, player, parent = None):
-      """
-         BRIEF  Set up the UI
-      """
-      super().__init__(parent)
+    def __init__(self, player, parent=None):
 
-      # init UI
-      color = { Player.WHITE : "White", Player.BLACK : "Black"}[player.color]
-      ai_enabled = QCheckBox("{0} AI".format(color), self)
-      turn_limit_s = QDoubleSpinBox(self)
+        super().__init__(parent)
 
-      v_layout = QVBoxLayout()
-      v_layout.addWidget(ai_enabled)
-      v_layout.addWidget(turn_limit_s)
+        # create box to enable/disable engine
+        colour = {Player.WHITE: "White", Player.BLACK: "Black"}[player.colour]
+        ai_enabled = QCheckBox("{0} Engine".format(colour), self)
+        turn_limit_s = QDoubleSpinBox(self)
 
-      self.setLayout(v_layout)
+        v_layout = QVBoxLayout()
+        v_layout.addWidget(ai_enabled)
+        v_layout.addWidget(turn_limit_s)
 
-      # connect signals/slots or disable UI
-      if isinstance(player, AiPlayer):
-         ai_enabled.stateChanged.connect(player.SetCheckSate)
-         turn_limit_s.setValue(player.turn_limit_s)
-         turn_limit_s.valueChanged.connect(player.SetTurnLimit)
-      else:
-         ai_enabled.setEnabled(False)
-         turn_limit_s.setEnabled(False)
+        self.setLayout(v_layout)
+
+        # connect signals/slots or disable option if engine unavailable
+        if isinstance(player, AiPlayer):
+            ai_enabled.stateChanged.connect(player.SetCheckSate)
+            turn_limit_s.setValue(player.turn_limit_s)
+            turn_limit_s.valueChanged.connect(player.SetTurnLimit)
+        else:
+            ai_enabled.setEnabled(False)
+            turn_limit_s.setEnabled(False)
 
 
+'''
+Player class testing
+'''
 if __name__ == "__main__":
-   """
-      BRIEF  Test the Player class
-   """
-   import chess
-   import sys
 
-   exe_path = 'stockfish_14.1_win_x64_avx2.exe'
+    import chess
+    import sys
 
-   # ----------------------
-   # Synchronous
-   # ----------------------
-   board = chess.Board()
-   player_b = AiPlayer(exe_path, .1, Player.BLACK)
-   player_w = AiPlayer(exe_path, .1, Player.WHITE)
-   player = player_w
+    exe_path = 'stockfish_12_x64_avx2.exe'
 
-   while not board.is_game_over():
-      uci = player.TakeTurn(board.fen())
+    # ----------------------
+    # Synchronous
+    # ----------------------
+    board = chess.Board()
+    player_b = AiPlayer(exe_path, .1, Player.BLACK)
+    player_w = AiPlayer(exe_path, .1, Player.WHITE)
+    player = player_w
 
-      print(uci)
-      sys.stdout.flush()
+    while not board.is_game_over():
+        uci = player.TakeTurn(board.fen())
 
-      board.push(chess.Move.from_uci(uci))
+        print(uci)
+        sys.stdout.flush()
 
-      if player == player_w:
-         player = player_b
-      else:
-         player = player_w
+        board.push(chess.Move.from_uci(uci))
 
-   print(board.fen())
-   sys.stdout.flush()
+        if player == player_w:
+            player = player_b
+        else:
+            player = player_w
 
-   # ----------------------
-   # Asynchronous
-   # ----------------------
-   from PyQt5.QtCore import QThread
-   from PyQt5.QtWidgets import QApplication
+    print(board.fen())
+    sys.stdout.flush()
 
-   class ChessBoard(QObject, chess.Board):
-      """
+    # ----------------------
+    # Asynchronous
+    # ----------------------
+    from PyQt5.QtCore import QThread
+    from PyQt5.QtWidgets import QApplication
+
+
+    class ChessBoard(QObject, chess.Board):
+        """
          BRIEF  A helper class for the signal/slot testing
       """
-      ReadyForNextMove = pyqtSignal(str)
-      GameOver = pyqtSignal()
+        ReadyForNextMove = pyqtSignal(str)
+        GameOver = pyqtSignal()
 
-      def __init__(self):
-         """
+        def __init__(self):
+            """
             BRIEF  Construct the base classes
          """
-         super().__init__()
+            super().__init__()
 
-      @pyqtSlot(str)
-      def ApplyMove(self, uci):
-         """
+        @pyqtSlot(str)
+        def ApplyMove(self, uci):
+            """
             BRIEF  Apply a move to the board
          """
-         print(uci)
+            print(uci)
 
-         move = chess.Move.from_uci(uci)
-         if move in self.legal_moves:
-            self.push(move)
+            move = chess.Move.from_uci(uci)
+            if move in self.legal_moves:
+                self.push(move)
 
-            if not self.is_game_over():
-               self.ReadyForNextMove.emit(self.fen())
-            else:
-               print(self.fen())
-               self.GameOver.emit()
+                if not self.is_game_over():
+                    self.ReadyForNextMove.emit(self.fen())
+                else:
+                    print(self.fen())
+                    self.GameOver.emit()
 
-         sys.stdout.flush()
+            sys.stdout.flush()
 
-   q_app = QApplication([])
-   thread = QThread()
-   board = ChessBoard()
-   player_b = AiPlayer(exe_path, .1, Player.BLACK, thread, board)
-   player_w = AiPlayer(exe_path, .1, Player.WHITE, thread, board)
 
-   player_options_b = PlayerOptions(player_b)
-   player_options_b.setGeometry(300, 300, 200, 100)
+    q_app = QApplication([])
+    thread = QThread()
+    board = ChessBoard()
+    player_b = AiPlayer(exe_path, .1, Player.BLACK, thread, board)
+    player_w = AiPlayer(exe_path, .1, Player.WHITE, thread, board)
 
-   player_options_w = PlayerOptions(player_w)
-   player_options_w.setGeometry(300, 600, 200, 100)
+    player_options_b = PlayerOptions(player_b)
+    player_options_b.setGeometry(300, 300, 200, 100)
 
-   board.GameOver.connect(q_app.exit)
-   q_app.aboutToQuit.connect(thread.quit)
-   thread.start()
+    player_options_w = PlayerOptions(player_w)
+    player_options_w.setGeometry(300, 600, 200, 100)
 
-   player_options_b.show()
-   player_options_w.show()
+    board.GameOver.connect(q_app.exit)
+    q_app.aboutToQuit.connect(thread.quit)
+    thread.start()
 
-   q_app.exec()
-   thread.wait()
+    player_options_b.show()
+    player_options_w.show()
 
+    q_app.exec()
+    thread.wait()

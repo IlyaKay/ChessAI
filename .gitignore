@@ -132,3 +132,6 @@ dmypy.json
 /Chess-AI-with-TensorFlow-main/
 /test.py
 /test.svg
+/enginetemp/
+/sf11versions/
+/Stockfish-sf_11/
