@@ -66,7 +66,7 @@ class ChessBoard(QWidget, chess.Board):
             self.push(move)
             self.DrawBoard()
 
-            print(self.fen())
+            print("Move:" + str(move) + " | FEN:" + self.fen())
             if not self.is_game_over():
                 self.ReadyForNextMove.emit(self.fen())
             else:
@@ -82,6 +82,41 @@ class ChessBoard(QWidget, chess.Board):
             self.ReadyForNextMove.emit(self.fen())
         except IndexError:
             pass
+
+    @pyqtSlot()
+    def SetOpening(self):
+        dialog = OpeningsPopup(self)
+        if dialog.exec() == QDialog.Accepted:
+            newBoard = dialog.SelectedOpening()
+            # insert moves instead of board position to allow UndoMove to function
+            self.reset()
+
+            if newBoard == "Queens Gambit":
+                self.push(chess.Move.from_uci('d2d4'))
+                self.push(chess.Move.from_uci('d7d5'))
+                self.push(chess.Move.from_uci('c2c4'))
+            elif newBoard == "Smith-Morra Gambit":
+                self.push(chess.Move.from_uci('e2e4'))
+                self.push(chess.Move.from_uci('c7c5'))
+                self.push(chess.Move.from_uci('d2d4'))
+                self.push(chess.Move.from_uci('c5d4'))
+                self.push(chess.Move.from_uci('c2c3'))
+
+            elif newBoard == "Benko Gambit":
+                self.push(chess.Move.from_uci('d2d4'))
+                self.push(chess.Move.from_uci('g8f6'))
+                self.push(chess.Move.from_uci('c2c4'))
+                self.push(chess.Move.from_uci('c7c5'))
+                self.push(chess.Move.from_uci('d4d5'))
+                self.push(chess.Move.from_uci('b7b5'))
+            elif newBoard == "Englund Gambit":
+                self.push(chess.Move.from_uci('d2d4'))
+                self.push(chess.Move.from_uci('e7e5'))
+                self.push(chess.Move.from_uci('d4e5'))
+                self.push(chess.Move.from_uci('b8c6'))
+
+            self.DrawBoard()
+            self.ReadyForNextMove.emit(self.fen())
 
     '''
     Redraw the chessboard based on board state
@@ -110,6 +145,59 @@ class ChessBoard(QWidget, chess.Board):
             topleft < event.x() < bottomright,
             topleft < event.y() < bottomright,
         ])
+
+
+'''
+    Class used to create a popup to allow user to pick an opening
+'''
+class OpeningsPopup(QDialog):
+
+    def __init__(self, parent=None):
+        super().__init__(parent, Qt.WindowSystemMenuHint | Qt.WindowTitleHint)
+        self.setWindowTitle("Openings")
+
+        radio_qg = QRadioButton("Queens Gambit")
+        radio_sm = QRadioButton("Smith-Morra Gambit")
+        radio_bg = QRadioButton("Benko Gambit")
+        radio_eg = QRadioButton("Englund Gambit")
+
+        self.button_group = QButtonGroup()
+        self.button_group.addButton(radio_qg)
+        self.button_group.addButton(radio_sm)
+        self.button_group.addButton(radio_bg)
+        self.button_group.addButton(radio_eg)
+
+        radio_qg.setChecked(True)
+
+        radio_h_layout = QHBoxLayout()
+        radio_h_layout.addWidget(radio_qg)
+        radio_h_layout.addWidget(radio_sm)
+        radio_h_layout.addWidget(radio_bg)
+        radio_h_layout.addWidget(radio_eg)
+
+        group_box = QGroupBox()
+        group_box.setLayout(radio_h_layout)
+
+        ok_button = QPushButton("Ok")
+        cancel_button = QPushButton("Cancel")
+
+        ok_button.released.connect(self.accept)
+        cancel_button.released.connect(self.reject)
+
+        button_h_layout = QHBoxLayout()
+        button_h_layout.addWidget(ok_button)
+        button_h_layout.addWidget(cancel_button)
+
+        v_layout = QVBoxLayout()
+        v_layout.addWidget(group_box)
+        v_layout.addLayout(button_h_layout)
+        self.setLayout(v_layout)
+
+    '''
+    Get the opening the user selected
+    '''
+    def SelectedOpening(self):
+        return self.button_group.checkedButton().text()
 
 
 '''
@@ -186,6 +274,7 @@ class BoardControls(QWidget):
 
         # connect signals/slots
         undo_button.released.connect(board.UndoMove)
+        openings_button.released.connect(board.SetOpening)
 
 
 '''
@@ -197,6 +286,7 @@ if __name__ == "__main__":
     q_app = QApplication([])
     board = ChessBoard()
     board.UndoMove()
+    board.SetOpening()
     board.show()
     board_controls = BoardControls(board)
     board_controls.setGeometry(300, 300, 200, 100)
